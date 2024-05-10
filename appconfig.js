@@ -1,2 +1,2 @@
-__hostingsite = "edee_jlpdev"
-__atlasappid = "gcr_edee-vnbjzew"
+__hostingsite = "gcr_edee_dev"
+__atlasappid = "gcr_edee_dev-rhnsbxk"
