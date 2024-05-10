@@ -3,7 +3,7 @@ let codeChanged;
 let _exampleName = []; //Examples used for different orgs
 let _saveFileName = null;
 
-const serviceHostname = "https://68wooley.github.io/EDEE_JLPDEV/";
+const serviceHostname = "https://68wooley.github.io/EDEE_GCRDEV/";
 
 async function onLoad() {
 
