@@ -11,14 +11,16 @@ async function get_IndexDemo(req, res) {
     var projection = { _id: 1 };
     var rval = {};
     
-    rval.withIndex = await collection.find(query).limit(0).explain();
-    filterResponse(rval.withIndex);
+    rval = await collection.find(query).limit(0).explain();
+    rval.message = {"withIndex": filterResponse(rval.message)};
 
     query = { bedrooms: 4 };
-    rval.withoutIndex = await collection.find(query).limit(0).explain();
-    filterResponse(rval.withoutIndex);
+    var rval2 = await collection.find(query).limit(0).explain();
+    //Combine the two returns for display in the UI.
+    rval.message.withoutIndex = filterResponse(rval2.message)
+    rval.ms += rval2.ms
 
-    res.send(rval);
+    res.send({'res': rval});
 }
 
 async function initWebService() {
@@ -39,4 +41,7 @@ function filterResponse(r)
     delete r.command;
     delete r.serverParameters;
     delete r.serverInfo;
+    delete r.$clusterTime;
+    delete r.operationTime;
+    return r;
 }

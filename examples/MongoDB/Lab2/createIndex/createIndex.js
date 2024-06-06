@@ -19,16 +19,23 @@ async function get_Index(req,res)
     var query = { colour : 'Red', shape: "square" };
     fullExplain = await collection.find(query).limit(0).explain();
     const { nReturned, executionTimeMillis, totalKeysExamined,
-      totalDocsExamined, winningPlan } = fullExplain.executionStats;
+      totalDocsExamined, winningPlan } = fullExplain.message.executionStats;
     const importantStats = { nReturned, executionTimeMillis, totalKeysExamined, 
-      totalDocsExamined, winningPlan: fullExplain.queryPlanner.winningPlan };
+      totalDocsExamined, winningPlan: fullExplain.message.queryPlanner.winningPlan };
     
     res.send({ importantStats, fullExplain });
 }
 
 // Create Sample Data
 async function post_CreateData(req, res) {
+    
+    var consolidatedMsg = {ok: true, ms: 0, message: {}};
+    
     var dropResult = await collection.drop();
+    consolidatedMsg.message.dropResult = {};
+    consolidatedMsg.message.dropResult.ok = dropResult.message.ok;
+    consolidatedMsg.ms += dropResult.ms;
+
     const nDocs = 10000;
     var batch = [];
 
@@ -43,7 +50,11 @@ async function post_CreateData(req, res) {
     // Any remaining
     if(batch.length) await collection.insertMany(batch);
     const loaded = await collection.countDocuments({});
-    res.send({ dropResult, loaded, msg: "Now Change the URL to v1/Index"});
+    consolidatedMsg.message.loaded = loaded.message;
+    consolidatedMsg.ms += loaded.ms;
+
+    consolidatedMsg.message.msg = "Now Change the URL to v1/Index";
+    res.send({ res: consolidatedMsg});
 }
 
 async function initWebService() {

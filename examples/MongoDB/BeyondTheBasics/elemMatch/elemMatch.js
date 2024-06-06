@@ -23,14 +23,15 @@ async function get_Data(req, res) {
 
 async function post_Data(req, res) {
   nDocs = await arrayExample.countDocuments();
-  if (!nDocs) {
+  if (!nDocs.message) {
     docs = JSON.parse(req.body);
     rval = await arrayExample.insertMany(docs);
     res.status(201);
     res.send(rval);
   } else {
     res.status(200);
-    res.send({ ok: 1, msg: "No new data loaded", docs: JSON.stringify(nDocs) });
+    nDocs.message = {msg: "No new data loaded", docs: JSON.stringify(nDocs.message) }
+    res.send({res: nDocs});
   }
 }
 

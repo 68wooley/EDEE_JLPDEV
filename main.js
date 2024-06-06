@@ -3,7 +3,8 @@ let codeChanged;
 let _exampleName = []; //Examples used for different orgs
 let _saveFileName = null;
 
-const serviceHostname = "https://68wooley.github.io/EDEE_GCRDEV/";
+//const serviceHostname = "https://68wooley.github.io/EDEE_GCRDEV/";
+const serviceHostname = "http://localhost:8080/gcr_edee/";
 
 async function onLoad() {
 
@@ -111,35 +112,70 @@ async function callService(method) {
     const startTime = Date.now();
     const response = await callVirtualEndpoint(fullURL, method);
     const endTime = Date.now();
+    
+    if(response._data.res){
+      //New code with standardized response object
+      let timeToShow = Math.floor(endTime - startTime) //- (MongoClient._serverLatency * MongoClient._nServerCalls));
+      if (timeToShow<1) timeToShow=1;
+      
+      let serverExecTime = response._data.res.ms
+      //if (serverExecTime<1) serverExecTime=1;
+    
+      let renderOut = "";
 
-    let timeToShow = Math.floor((endTime - startTime) - (MongoClient._serverLatency * MongoClient._nServerCalls));
-    if (timeToShow<1) timeToShow=1; 
-   
-    let renderOut = "";
+      if (conso1e.contents) {
+        renderOut += "-------------------------- Console --------------------------\n";
+        renderOut += conso1e.contents;
+        renderOut += "\n-------------------------------------------------------------\n\n";
+      }
+      renderOut += `\n"ResponseTime": ${timeToShow}ms\n`
+      renderOut += `"ServerTime": ${serverExecTime}ms\n`
 
-    if (conso1e.contents) {
-      renderOut += "-------------------------- Console --------------------------\n";
-      renderOut += conso1e.contents;
-      renderOut += "\n-------------------------------------------------------------\n\n";
+      renderOut += `"StatusCode": ${response._status}\n`;
+      for (const key in response._headers) {
+        renderOut += `"${key}": ${response._headers[key]}\n\n`;
+      }
+
+      if (
+        typeof response._data.res.message === "string" ||
+        response._data.res.message instanceof String
+      ) {
+        renderOut += `${response._data.res.message}`;
+      } else {
+        renderOut += JSON.stringify(response._data.res.message, null, 2);
+      }
+
+      _output.setValue(renderOut,-1);
+    }else{
+      //Original code - can be removed once all server side code has bee updated
+      let timeToShow = Math.floor((endTime - startTime) - (MongoClient._serverLatency * MongoClient._nServerCalls));
+      if (timeToShow<1) timeToShow=1;
+    
+      let renderOut = "";
+
+      if (conso1e.contents) {
+        renderOut += "-------------------------- Console --------------------------\n";
+        renderOut += conso1e.contents;
+        renderOut += "\n-------------------------------------------------------------\n\n";
+      }
+      renderOut += `\n"ResponseTime": ${timeToShow}ms\n`
+
+      renderOut += `"StatusCode": ${response._status}\n`;
+      for (const key in response._headers) {
+        renderOut += `"${key}": ${response._headers[key]}\n\n`;
+      }
+
+      if (
+        typeof response._data === "string" ||
+        response._data instanceof String
+      ) {
+        renderOut += `${response._data}`;
+      } else {
+        renderOut += JSON.stringify(response._data, null, 2);
+      }
+
+      _output.setValue(renderOut,-1);
     }
-    renderOut += `\n"ResponseTime": ${timeToShow}ms\n`
-
-
-    renderOut += `"StatusCode": ${response._status}\n`;
-    for (const key in response._headers) {
-      renderOut += `"${key}": ${response._headers[key]}\n\n`;
-    }
-
-    if (
-      typeof response._data === "string" ||
-      response._data instanceof String
-    ) {
-      renderOut += `${response._data}`;
-    } else {
-      renderOut += JSON.stringify(response._data, null, 2);
-    }
-
-    _output.setValue(renderOut,-1);
   } catch (error) {
     console.error(error);
     messageBox(error); // Fatal problem

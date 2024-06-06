@@ -71,7 +71,7 @@ async function post_Task(req, res) {
 
   rval = await taskCollection.insertOne(newTask);
   res.status(202);
-  res.send({ taskId: rval?.result?.insertedIds?.[0] });
+  res.send({ taskId: rval?.insertedIds?.[0] });
 }
 
 async function post_Complete(req, res) {

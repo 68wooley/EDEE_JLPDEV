@@ -1,37 +1,37 @@
 var mongoClient = null;
 var collection, msg;
 
-/* This collection has indexes on property_type, room_type, and beds.
-   But, you can only use an index if the first field in the index is in
+/* In this collection, the field containing the total number of
+   beds in the property is indexed, while the number of bedrooms
+   is not.
+   
+   You can only use an index if the first field in the index is in
    the query */
 
 async function get_IndexDemo(req, res) {
 
-    var query = { beds: 11 };
-    var projection = { _id: 1 };
     var rval = msg;
-    
-    startTime = new Date();
-    result = await collection.countDocuments(query);
-    endTime = new Date();
-    timeTaken = (endTime - startTime);
-    rval += "Times include server roundtrip time of approx " +
-        mongoClient.getPingTime()+"ms\n";
+
+    var query = { beds: 11 };
+    result = await collection.find(query).explain('executionStats');
+    var indexTime = result.message.executionStats.executionTimeMillis
+    indexTime = (indexTime === 0) ? 1 : indexTime
     rval += "Query " + JSON.stringify(query) +  " with index took approx " + 
-        timeTaken + " ms to find " + result + " records\n";
+        indexTime + " ms to find " + result.message.executionStats.nReturned + " records\n";
+    
 
     query = { bedrooms: 8 };
-    startTime = new Date();
-    result = await collection.countDocuments(query);
-    endTime = new Date();
-    timeTaken = (endTime - startTime);
-
+    result = await collection.find(query).explain('executionStats');
+    var nonIndexTime = result.message.executionStats.executionTimeMillis
     rval += "Query " + JSON.stringify(query) + " with NO index took approx " + 
-        timeTaken + " ms to find " + result + " records\n";
+        nonIndexTime + " ms to find " + result.message.executionStats.nReturned + " records\n";
+
+    result.ms = indexTime + nonIndexTime //This is the total server time taken by both queries
+    result.message = rval //This sets the message to be displayed in the UI.
 
     res.header("Content-Type", "text/plain");
     res.header("Server-ping-time",mongoClient.getPingTime()+"ms (approx.)");
-    res.send(rval);
+    res.send({'res': result});
 }
 
 async function initWebService() {

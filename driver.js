@@ -51,7 +51,7 @@ class MongoClient {
     const rval = await this.user.functions.startSession();
     MongoClient._nServerCalls++;
     //TODO - handle error better
-    return new ClientSession(rval.result, this);
+    return new ClientSession({'id': rval.result.message}, this);
   }
 
   /**
@@ -336,7 +336,7 @@ class MongoCollection {
     if (rval.error) {
       throw new Error(rval.error);
     }
-    const { numIndexesBefore, numIndexesAfter, note } = rval;
+    const { numIndexesBefore, numIndexesAfter, note } = rval.message;
     return { numIndexesBefore, numIndexesAfter, note };
   }
 
@@ -355,10 +355,10 @@ class MongoCollection {
       this.collName,
       index
     );
-    if (rval.result.ok) {
-      return { ok: 1, nIndexesWas: rval.result.nIndexesWas };
+    if (rval.result.message.ok) {
+      return { ok: 1, nIndexesWas: rval.result.message.nIndexesWas };
     }
-    return { ok: 0, error: rval.result.error };
+    return { ok: 0, error: rval.result.message.error };
   }
 
   /**
@@ -373,10 +373,10 @@ class MongoCollection {
       this.dbName,
       this.collName
     );
-    if (rval.error) {
-      throw new Error(rval.error);
+    if (!rval.ok) {
+      throw new Error(rval.message);
     }
-    return rval.cursor?.firstBatch;
+    return rval.message?.cursor?.firstBatch;
   }
   /**
    * Drop this collection and all non search indexes
@@ -745,13 +745,14 @@ class MongoCollection {
   async countDocuments(query) {
     if (!(await this.mongoClient.connect()))
       throw new Error(this.mongoClient.lastError);
+    query = query ? query : {}
     MongoClient._nServerCalls++;
     const rval = await this.mongoClient.user.functions.count(
       this.dbName,
       this.collName,
       query
     );
-    return rval.result;
+    return rval;
   }
 }
 
@@ -998,7 +999,7 @@ class ClientSession {
   async serverStartTransaction() {
     this.starting = false;
     const rval = await this.sessionMongoClient.user.functions.startTransaction(this.sessionId.id);
-    if (rval.result.error) { throw new Error(EJSON.stringify(rval.result)) }
+    if (!rval.result.ok) { throw new Error(EJSON.stringify(rval.result.message)) }
     this.inprogress = true;
     return true;
   }
@@ -1008,7 +1009,7 @@ class ClientSession {
     if (this.inprogress == false) return; //If we never did anything it's a NoOp
     this.inprogress = false;
     const rval = await this.sessionMongoClient.user.functions.endTransaction(this.sessionId.id, true);
-    if (rval.result.error) { throw new Error(EJSON.stringify(rval.result)) }
+    if (!rval.result.ok) { throw new Error(EJSON.stringify(rval.result.message)) }
     return rval.result;
   }
 
@@ -1017,7 +1018,7 @@ class ClientSession {
     if (this.inprogress == false) return; //If we never did anything it's a NoOp
     this.inprogress = false;
     const rval = await this.sessionMongoClient.user.functions.endTransaction(this.sessionId.id, false);
-    if (rval.result.error) { throw new Error(EJSON.stringify(rval.result)) }
+    if (rval.result.error) { throw new Error(EJSON.stringify(rval.result.message)) }
     return rval.result;
   }
 

@@ -1,15 +1,17 @@
 This runs two queries on the same large data set.
 
-One has an index that can be used, and the otehr does not, they return
+One has an index that can be used, and the other does not. They return
 almost the same number of documents.
 
-It uses countDocuments() rather than find() which performs the find
-but only returns the count from the server. This excludes the network
-cost of fetching a lot of documents over the network from the
-measurement.
+It uses find().explain() with the 'executionStats' option, rather than
+find(). This will cause MongoDB to select an execution plan, run the
+winning plan, and include execution metrics from the return, including
+the execution time and number of documents returned. The explain
+metrics exclude any network overhead.
 
-An indexed query will be a fairly constant speed, though
-you'll also see some significant network overhead in these results.
+After an initial call to the webservice, which may may be slower due
+to data not being loaded from disk to in-memory cache, an indexed query 
+will be a fairly constant speed.
 
 A collection scan (no index) will place a lot of load on the server,
 proportaional to the number of callers so it may be very slow in a 

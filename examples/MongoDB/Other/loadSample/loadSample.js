@@ -36,7 +36,8 @@ async function get_Highscores(req, res) {
   if (req.query.get("count") == "true") {
     var count = await collection.countDocuments({});
     res.status(200);
-    res.send({ nDocs: count });
+    count.message = {nDocs: count.message};
+    res.send({ res: count});
   } else {
     var query = {};
     //query.country = "Greece"
